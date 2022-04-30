@@ -11,6 +11,6 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
-/node_modules
+node_modules
 .*
 /resources
