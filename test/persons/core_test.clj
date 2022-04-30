@@ -1,15 +1,16 @@
 (ns persons.core-test
   (:require [clojure.test :refer :all]
-            [persons.core :refer :all]))
+            [persons.crud :refer :all]))
 
 (def params-ok  {:full-name "Sirotin Alexandr" 
-                 :birth-date "07.12.1991"
+                 :birth-date "07-12-1991"
                  :sex "male"
                  :address "Saint-Petersburg"
-                 :insurance-policy-number 1234123412341234})
+                 :insurance-policy-number "1234123412"})
 
 (def bad-params-variations
   [[{:full-name nil} "Empty full name field"]
+   [{:full-name nil} "Empty full name field"]
    [{:full-name (apply str (repeat 999 "A"))} "Name is too long"]
    [{:sex nil} "Empty sex field"]
    [{:extra 42} "Extra field"]])
@@ -18,7 +19,7 @@
 
 (deftest test-api-ok-request
   (testing "Get person"
-    (let [status (:status (get-person-by-id 40))]
+    (let [status (:status (get-person-by-id 1))]
       (is (= status 200))))
   (testing "Add person"
     (is (= params-ok {})))
