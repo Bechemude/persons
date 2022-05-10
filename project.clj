@@ -6,17 +6,17 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [ring "1.9.4"]
                  [metosin/muuntaja "0.6.8"]
-                 [ring/ring-defaults "0.3.3"]
-                 [binaryage/devtools "1.0.5"]
+                 ;; [ring/ring-defaults "0.3.3"]
+                 ;; [binaryage/devtools "1.0.5"]
                  [ring-cors "0.1.13"]
-                 [ring/ring-json "0.5.1"]
+                 ;; [ring/ring-json "0.5.1"]
                  [compojure "1.6.2"]
                  [clj-time "0.15.2"]
                  [org.clojure/java.jdbc "0.7.12"]
                  [org.postgresql/postgresql "42.2.23"]]
+  :plugins [[lein-cloverage "1.2.2"]]
   :resource-paths ["resources"]
   :main ^:skip-aot persons.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
-

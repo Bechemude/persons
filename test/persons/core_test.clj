@@ -1,39 +1,85 @@
 (ns persons.core-test
-  (:require [clojure.test :refer :all]
-            [persons.crud :refer :all]))
+  (:require [clojure.test :refer [deftest is use-fixtures testing]]
+            [clojure.java.jdbc :as jdbc]
+            [clj-time.jdbc]
+            [clj-time.local :as l]
+            [muuntaja.core :refer [decode]]
+            [persons.core :refer [app]]
+            [persons.db :refer [drop-table create-table add-person]]))
 
-(def params-ok  {:full-name "Sirotin Alexandr" 
-                 :birth-date "07-12-1991"
-                 :sex "male"
-                 :address "Saint-Petersburg"
-                 :insurance-policy-number "1234123412"})
+(def person {:full-name "Koka"
+             :sex "female"
+             :birth-date "1992-01-25"
+             :address "address"
+             :insurance-policy-number "1234567890"})
 
-(def bad-params-variations
-  [[{:full-name nil} "Empty full name field"]
-   [{:full-name nil} "Empty full name field"]
-   [{:full-name (apply str (repeat 999 "A"))} "Name is too long"]
-   [{:sex nil} "Empty sex field"]
-   [{:extra 42} "Extra field"]])
+(def bad-params
+  [[{:full-name nil} "empty full-name field"]
+   [{:full-name 42} "wrong value in full-name field"]
+   [{:sex nil} "empty sex field"]
+   [{:sex 42} "wrong value in sex field"]
+   [{:birth-date nil} "empty birth-date field"]
+   [{:birth-date 42} "wrong value in birth-date field"]
+   [{:birth-date "2200-01-01"} "wrong value in birth-date field"]
+   [{:address nil} "empty address field"]
+   [{:insurance-policy-number nil} "empty insurance-policy-number field"]])
 
+(defn setup-db []
+  (extend-protocol jdbc/IResultSetReadColumn
+    java.sql.Date
+    (result-set-read-column [val _rsmeta _idx]
+      (.toString (l/format-local-time val :year-month-day))))
+  (create-table)
+  (add-person person))
 
+(defn fix-db [t]
+  (setup-db)
+  (t)
+  (drop-table))
 
-(deftest test-api-ok-request
-  (testing "Get person"
-    (let [status (:status (get-person-by-id 1))]
-      (is (= status 200))))
-  (testing "Add person"
-    (is (= params-ok {})))
-  (testing "Update person"
-    (let [status (:status (get-person-by-id 40))]
-      (is (= status 200))))
-  (testing "Delete person"
-    (let [status (:status (delete-person 40))]
-      (is (= status 200)))))
+(use-fixtures :once fix-db)
 
-(deftest test-api-bad-request
-  (testing "Get person"
-    (let [status (:status (get-person-by-id 400))]
-      (is (= status 404))))
-  (testing "FIXME, I fail."
-    (is (= 1 1))))
+(deftest test-app-get-persons
+  (let [request {:request-method :get :uri "/persons"}
+        response-body (:body (app request))]
+    (is (= person
+           (dissoc (first (decode "application/json" response-body)) :id)))))
 
+(deftest test-app-create-person
+  (let [request {:request-method :post :uri "/persons" :body-params person}
+        status (:status (app request))]
+    (is (= status 201))))
+
+(deftest test-app-get-person-by-id
+  (let [request {:request-method :get :uri "/persons/1"}
+        response-body (:body (app request))]
+    (is (= person
+           (dissoc (first (decode "application/json" response-body)) :id)))))
+
+(deftest test-app-update-person-by-id
+  (let [request {:request-method :put :uri "/persons/1" :body-params person}
+        status (:status (app request))]
+    (is (= status 200))))
+
+(deftest test-app-delete-person
+  (let [request {:request-method :delete :uri "/persons/1"}
+        status (:status (app request))]
+    (is (= status 200))))
+
+(deftest test-app-page-not-found
+  (let [request {:request-method :get :uri "/not-found"}
+        status (:status (app request))]
+    (is (= status 404))))
+
+;; bad params
+
+(deftest test-app-create-person-bad-params
+  (testing "Sending bad params:"
+    (doseq [[params desription] bad-params]
+      (testing desription
+        (let [bad-param (merge person params)
+              request {:request-method :post
+                       :uri "/persons"
+                       :body-params bad-param}
+              status (:status (app request))]
+          (is (= 400 status)))))))
