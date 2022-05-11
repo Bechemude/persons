@@ -24,19 +24,20 @@
      [is-updated?]
      (when-not is-updated?
        (GET "http://localhost:8080/persons"
-       {:handler (fn [response]
-                   (set-loaded true)
-                   (set-updated true)
-                   (set-persons response))
-        :error-handler (fn [error]
-                         (set-loaded true)
-                         (set-updated true)
-                         (set-error error))})))
+         {:handler (fn [response]
+                     (set-loaded true)
+                     (set-updated true)
+                     (set-persons response))
+          :error-handler (fn [error]
+                           (set-loaded true)
+                           (set-updated true)
+                           (set-error error))})))
     (d/div {:class "flex flex-col"}
            (d/h1 {:class "text-4xl pb-4 text-center"} "Persons")
            (d/button {:class "w-11/12 m-auto p-2 mb-4
                               bg-gray-100 hover:bg-gray-200"
-                      :on-click #((set-modal-type "edit")
+                      :on-click (fn []
+                                  (set-modal-type "edit")
                                   (set-modal-opened true))}
                      "Add new person")
            (when error
@@ -50,6 +51,7 @@
            (when is-modal-opened?
              ($ modal {:person-id person-id
                        :modal-type modal-type
+                       :set-person-id set-person-id
                        :set-modal-opened set-modal-opened})))))
 
 (defn ^:export ^:dev/after-load init []

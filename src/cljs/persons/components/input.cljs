@@ -29,10 +29,16 @@
                          "border-2 border-red-500 ")
                        "p-3 bg-white")
                       :type type :placeholder label :value value
+                      :default-value "select a option"
                       :on-blur #(set-dirty true)
                       :on-change handler}
-                     (d/option {:class "hidden" :disabled true :selected true}
-                               "select a option")
-                     (map-indexed (fn [i option] (d/option {:key i} option)) options))
+                     (map-indexed (fn [i option]
+                                    (d/option {:key i
+                                               :class (if (= option "select a option")
+                                                        "hidden"
+                                                        "")
+                                               :disabled (= option "select a option")}
+                                              option))
+                                  options))
            (when (and dirty (not is-valid?))
              (d/p {:class "text-red-500"} error-msg)))))
