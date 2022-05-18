@@ -1,7 +1,7 @@
 (ns persons.crud
   (:require [persons.db :as db]
             [clojure.spec.alpha :as s]
-            [spec.form :as f]))
+            [form :as f]))
 
 (defn get-persons []
   (let [persons (db/get-persons)]

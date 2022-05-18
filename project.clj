@@ -15,6 +15,7 @@
                  [org.clojure/java.jdbc "0.7.12"]
                  [org.postgresql/postgresql "42.2.23"]]
   :plugins [[lein-cloverage "1.2.2"]]
+  :src-paths ["src/clj" "src/spec"]
   :resource-paths ["resources"]
   :main ^:skip-aot persons.core
   :target-path "target/%s"

@@ -16,10 +16,6 @@
 (defroutes app-routes
   (context "/persons" []
     (GET "/" [] (get-persons))
-    ;; (POST "/" [:as req] (try (add-person (:body-params req))
-    ;;                          (catch Exception e
-    ;;                            {:status 400})))
-    ;; (POST "/" [:as req] (add-person req))
     (POST "/" [:as req] (add-person (:body-params req)))
     (context "/" []
       (GET "/:id{[0-9]+}" [id :<< as-int] (get-person-by-id id))

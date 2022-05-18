@@ -10,7 +10,7 @@
 
 (def base-url "http://localhost:8080/persons/")
 
-(defnc edit-modal [{:keys [id set-modal-opened]}]
+(defnc edit-modal [{:keys [id handle-close]}]
   (let [[form set-form] (hooks/use-state {:full-name nil
                                           :sex nil
                                           :birth-date nil
@@ -18,7 +18,6 @@
                                           :insurance-policy-number nil})
         [is-loaded? set-loaded] (hooks/use-state false)
         [error set-error] (hooks/use-state nil)]
-
     (hooks/use-effect
      "Get the user being edited"
      [id]
@@ -49,7 +48,7 @@
                 :handler #(set-form assoc :sex (-> % .-target .-value))
                 :is-valid? (s/valid? ::f/sex (:sex form))
                 :error-msg (f/get-message (s/explain-data ::f/sex (:sex form)))
-                :options #{"male" "female" "other"}})
+                :options #{"select a option" "male" "female" "other"}})
      ($ input {:label "Дата рождения"
                :type "date"
                :value (:birth-date form)
@@ -76,36 +75,41 @@
                             {:response-format :json
                              :format :json
                              :params form
+                             :handler handle-close
                              :error-handler (fn [error]
                                               (set-loaded true)
                                               (set-error error))})}
                "Save!"))))
 
-(defnc delete-modal [{:keys [id set-modal-opened]}]
+(defnc delete-modal [{:keys [id handle-close]}]
   (<>
    (d/h2 {:class "text-xl text-center"} "Are you sure?")
    (d/p "Delete person " id)
    (d/button {:class "p-1 bg-red-100 hover:bg-red-200"
-              :on-click #(DELETE (str base-url id))}
+              :on-click #(DELETE (str base-url id)
+                                 {:handler handle-close})}
              "Delete")))
 
-(defnc modal [{:keys [person-id modal-type set-modal-opened]}]
+(defnc modal [{:keys [person-id modal-type set-modal-opened set-person-id]}]
+  (defn handle-close []
+    (set-person-id nil)
+    (set-modal-opened false))
   (let [modal-ref (hooks/use-ref nil)]
     (hooks/use-effect
      :once
      (.focus @modal-ref))
-    (d/div {:on-key-down (fn [e] (when (= (.-key e) "Escape") (set-modal-opened false)))
+    (d/div {:on-key-down (fn [e] (when (= (.-key e) "Escape") (handle-close)))
             :tab-index 0
             :ref modal-ref
-            :on-click (fn [] (set-modal-opened false))
+            :on-click handle-close
             :class "fixed left-0 top-0 w-screen h-screen
                     bg-gray-400 bg-opacity-50 overflow-auto"}
            (d/div {:class "grid w-3/6 m-auto my-20 p-10 gap-10 bg-gray-100"
                    :on-click (fn [e] (.stopPropagation e))}
                   (d/button {:class "absolute justify-self-end text-3xl -m-5 transform rotate-45"
-                             :on-click #(set-modal-opened false)} "+")
+                             :on-click handle-close} "+")
                   (case modal-type
                     "delete" ($ delete-modal {:id person-id
-                                              :set-modal-opened set-modal-opened})
+                                              :handle-close handle-close})
                     "edit" ($ edit-modal {:id person-id
-                                          :set-modal-opened set-modal-opened}))))))
+                                          :handle-close handle-close}))))))
