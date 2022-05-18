@@ -5,7 +5,7 @@
    [persons.components.table :refer [table]]
    [helix.core :refer [$]]
    [cljs.core.async.interop :refer-macros [<p! p->c]]
-   [cljs.core.async :refer [take! go go-loop <!]]
+   [cljs.core.async :refer [timeout take! go go-loop <!]]
    ["@testing-library/react" :as rtl]))
 
 (def person {:full-name "Koka"
@@ -68,23 +68,15 @@
 
 (. %  -innerHTML)
 
-(go-loop
- (<! (timeout 100))
-  (println "Hello from process 1"){}
+(go-loop []
+  (<! (timeout 100))
+  (println "Hello from process 1")
   (recur))
+
+(go []
+    (<p! (js/Promise.resolve (println "Hello from process 1"))))
 
 (rtl/cleanup)
 
 (comment
   (run-tests))
-
-;; (deftest test-modal
-;;   (do (-> ($ app)
-;;             (rtl/render)
-;;             (. getByText "button")
-;;             (. click rtl/fireEvent))
-;;         (-> (. rtl/screen findByText "text")
-;;             (.then #(is (= "text" (. % -innerHTML)))))))
-
-;; привет!
-;; может кто-то сможет подсказать
