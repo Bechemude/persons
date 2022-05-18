@@ -15,7 +15,7 @@
                             [:sex "TEXT NOT NULL"]
                             [:birth_date "DATE NOT NULL"]
                             [:address "TEXT NOT NULL"]
-                            [:insurance_policy_number "TEXT NOT NULL"]]))
+                            [:insurance_policy_number "TEXT NOT NULL UNIQUE"]]))
 
 (extend-protocol jdbc/IResultSetReadColumn
   java.sql.Date

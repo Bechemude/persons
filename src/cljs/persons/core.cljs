@@ -4,7 +4,7 @@
    [helix.core :refer [defnc $]]
    [helix.hooks :as hooks]
    [helix.dom :as d]
-   ["react-dom" :as rdom]
+   ["react-dom/client" :as rdom]
    [persons.components.modal :refer [modal]]
    [persons.components.table :refer [table]]))
 
@@ -55,4 +55,4 @@
                        :set-modal-opened set-modal-opened})))))
 
 (defn ^:export ^:dev/after-load init []
-  (rdom/render ($ app) (js/document.getElementById "app")))
+  (. (rdom/createRoot (js/document.getElementById "app")) render ($ app) ))
