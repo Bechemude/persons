@@ -4,8 +4,6 @@
    [persons.core :refer [app]]
    [persons.components.table :refer [table]]
    [helix.core :refer [$]]
-   [cljs.core.async.interop :refer-macros [<p! p->c]]
-   [cljs.core.async :refer [timeout take! go go-loop <!]]
    ["@testing-library/react" :as rtl]))
 
 (def person {:full-name "Koka"
@@ -38,43 +36,14 @@
           (. -innerHTML))))))
 
 (deftest test-create-new-person-modal
-  (testing "Modal for creating new person"
+  (testing "Open modal"
     (async done
            (do (-> ($ app)
                    (rtl/render)
                    (. getByText "Add new person")
                    (. click rtl/fireEvent))
                (-> (. rtl/screen findByText "Create new person")
-                   (.then #(is (= "Loadin..." (. % -innerHTML)))))
-               (done)))))
-
-;; this sexp work!
-;;
-
-(do (-> ($ app)
-        (rtl/render)
-        (. getByText "Add new person")
-        (. click rtl/fireEvent))
-    (go
-      (is
-       (= "text"
-          (<!
-           (-> (. rtl/screen findByText "Create new person")
-               (.then #(. % -innerHTML))))))))
-
-(is (= "text" (fn [])))
-
-(. rtl/screen findByText "Create new person")
-
-(. %  -innerHTML)
-
-(go-loop []
-  (<! (timeout 100))
-  (println "Hello from process 1")
-  (recur))
-
-(go []
-    (<p! (js/Promise.resolve (println "Hello from process 1"))))
+                   (.then (is (= "Create new person" (. * -innerHTML))) (done)))))))
 
 (rtl/cleanup)
 

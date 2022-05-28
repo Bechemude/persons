@@ -7,6 +7,12 @@
             [persons.core :refer [app]]
             [persons.db :refer [drop-table create-table add-person]]))
 
+(def default-person {:full-name "Koka"
+                     :sex "female"
+                     :birth-date "1992-01-25"
+                     :address "address"
+                     :insurance-policy-number "1020304050"})
+
 (def person {:full-name "Koka"
              :sex "female"
              :birth-date "1992-01-25"
@@ -30,7 +36,7 @@
     (result-set-read-column [val _rsmeta _idx]
       (.toString (l/format-local-time val :year-month-day))))
   (create-table)
-  (add-person person))
+  (add-person default-person))
 
 (defn fix-db [t]
   (setup-db)
@@ -42,34 +48,34 @@
 (deftest test-app-get-persons
   (let [request {:request-method :get :uri "/persons"}
         response-body (:body (app request))]
-    (is (= person
-           (dissoc (first (decode "application/json" response-body)) :id)))))
+    (is (= (dissoc (first (decode "application/json" response-body)) :id)
+           default-person))))
 
 (deftest test-app-create-person
   (let [request {:request-method :post :uri "/persons" :body-params person}
         status (:status (app request))]
-    (is (= status 201))))
+    (is (= 201 status))))
 
 (deftest test-app-get-person-by-id
   (let [request {:request-method :get :uri "/persons/1"}
         response-body (:body (app request))]
-    (is (= person
-           (dissoc (first (decode "application/json" response-body)) :id)))))
+    (is (= (dissoc (first (decode "application/json" response-body)) :id)
+           default-person))))
 
 (deftest test-app-update-person-by-id
   (let [request {:request-method :put :uri "/persons/1" :body-params person}
         status (:status (app request))]
-    (is (= status 200))))
+    (is (= 200 status))))
 
 (deftest test-app-delete-person
   (let [request {:request-method :delete :uri "/persons/1"}
         status (:status (app request))]
-    (is (= status 200))))
+    (is (= 200 status))))
 
 (deftest test-app-page-not-found
   (let [request {:request-method :get :uri "/not-found"}
         status (:status (app request))]
-    (is (= status 404))))
+    (is (= 404 status))))
 
 ;; bad params
 
@@ -82,4 +88,4 @@
                        :uri "/persons"
                        :body-params bad-param}
               status (:status (app request))]
-          (is (= 400 status)))))))
+          (is (= status 400)))))))

@@ -1,6 +1,7 @@
 (ns persons.components.modal
   (:require
    [ajax.core :refer [GET POST PUT DELETE]]
+   [re-frame.core :as rf]
    [helix.core :refer [defnc $ <>]]
    [cljs.spec.alpha :as s]
    [helix.hooks :as hooks]
@@ -10,7 +11,10 @@
 
 (def base-url "http://localhost:8080/persons/")
 
-(defnc edit-modal [{:keys [id handle-close]}]
+(defn handle-close []
+  (rf/dispatch [:modal nil]))
+
+(defnc edit-modal [{:keys [id]}]
   (let [[form set-form] (hooks/use-state {:full-name nil
                                           :sex nil
                                           :birth-date nil
@@ -81,19 +85,16 @@
                                               (set-error error))})}
                "Save!"))))
 
-(defnc delete-modal [{:keys [id handle-close]}]
+(defnc delete-modal [{:keys [id]}]
   (<>
    (d/h2 {:class "text-xl text-center"} "Are you sure?")
    (d/p "Delete person " id)
    (d/button {:class "p-1 bg-red-100 hover:bg-red-200"
               :on-click #(DELETE (str base-url id)
-                                 {:handler handle-close})}
+                           {:handler handle-close})}
              "Delete")))
 
-(defnc modal [{:keys [person-id modal-type set-modal-opened set-person-id]}]
-  (defn handle-close []
-    (set-person-id nil)
-    (set-modal-opened false))
+(defnc modal [{:keys [person-id modal-type]}]
   (let [modal-ref (hooks/use-ref nil)]
     (hooks/use-effect
      :once
