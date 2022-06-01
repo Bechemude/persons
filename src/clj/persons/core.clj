@@ -66,9 +66,11 @@
 (comment
   (app {:request-method :get :uri "/persons"})
   (app {:request-method :get :uri "/persons/" :query-string {:search "Kok"}})
-  (m/decode
-   "application/json"
-   (:body (app {:request-method :get :uri "/persons/" :query-string "search=sok"})))
+
+  (first (m/decode
+          "application/json"
+          (:body (app {:request-method :get :uri "/persons/" :query-string "search=sok"}))))
+
   (m/decode "application/json"
             (:body (app {:request-method :get :uri "/persons/"})))
   (:body (get-persons nil))

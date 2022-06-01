@@ -6,6 +6,7 @@
                 [reagent "1.1.1"]
                 [cljs-ajax "0.8.4"]
                 [day8.re-frame/http-fx "0.2.4"]
+                [day8.re-frame/test "0.1.5"]
                 [lilactown/helix "0.1.2"]]
  :builds {:persons {:target :browser
                     :compiler-options {:output-feature-set :es2018}
