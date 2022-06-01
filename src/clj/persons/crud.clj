@@ -1,12 +1,19 @@
 (ns persons.crud
   (:require [persons.db :as db]
+            [clojure.string :refer [replace]]
             [clojure.spec.alpha :as s]
             [form :as f]))
 
-(defn get-persons []
-  (let [persons (db/get-persons)]
-    {:status 200
-     :body persons}))
+(defn get-persons
+  [search]
+  (if search
+    (let [search-value (replace search #"search=" "")
+          persons (db/get-persons-by-search search-value)]
+      {:status 200
+       :body persons})
+    (let [persons (db/get-persons)]
+      {:status 200
+       :body persons})))
 
 (defn get-person-by-id [id]
   (let [person (db/get-person-by-id id)]
@@ -46,13 +53,21 @@
             :error_data {:id id}}}))
 
 (comment
-  (get-persons)
+  (get-persons nil)
+  (get-persons "ok")
+  (get-persons "Kok")
+  (get-persons "Sok")
   (get-person-by-id 1)
-  (add-person {:full-name "Koka"
+  (add-person {:full-name "Soka"
                :sex "female"
                :birth-date "1992-01-25"
                :address "address"
-               :insurance-policy-number "1234567890"})
+               :insurance-policy-number "1234567892"})
+  (add-person {:full-name "Aoka"
+               :sex "female"
+               :birth-date "1992-01-25"
+               :address "address"
+               :insurance-policy-number "2234567892"})
   (update-person {:full-name "Koka"
                   :sex "female"
                   :birth-date "1992-01-25"

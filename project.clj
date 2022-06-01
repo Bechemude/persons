@@ -12,11 +12,9 @@
                  [ring "1.9.4"]
                  [ring-cors "0.1.13"]]
   :plugins [[lein-cloverage "1.2.2"]]
-  :src-paths ["src/clj" "src/spec"]
+  :source-paths ["src/clj" "src/spec"]
   :resource-paths ["resources"]
   :main ^:skip-aot persons.core
   :target-path "target/%s"
-  :profiles {:dev {:source-paths ["dev"]
-                   :dependencies [[org.clojure/tools.namespace "1.3.0"]]}
-             :uberjar {:aot :all
+  :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})

@@ -1,11 +1,13 @@
+
 (ns persons.core-test
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
             [clojure.java.jdbc :as jdbc]
             [clj-time.jdbc]
             [clj-time.local :as l]
+            [clj-time.format :as f]
             [muuntaja.core :refer [decode]]
             [persons.core :refer [app]]
-            [persons.db :refer [drop-table create-table add-person]]))
+            [persons.db :refer [db-spec]]))
 
 (def default-person {:full-name "Koka"
                      :sex "female"
@@ -30,13 +32,37 @@
    [{:address nil} "empty address field"]
    [{:insurance-policy-number nil} "empty insurance-policy-number field"]])
 
+(def test-persons-sql (jdbc/create-table-ddl
+                       :test_persons [[:id :serial "PRIMARY KEY NOT NULL"]
+                                      [:full_name "TEXT NOT NULL"]
+                                      [:sex "TEXT NOT NULL"]
+                                      [:birth_date "DATE NOT NULL"]
+                                      [:address "TEXT NOT NULL"]
+                                      [:insurance_policy_number "TEXT NOT NULL UNIQUE"]]))
+
+(defn drop-table []
+  (jdbc/execute! db-spec "DROP TABLE test_persons;"))
+
+(defn add-test-person [{:keys
+                        [full-name sex birth-date address insurance-policy-number]}]
+  (jdbc/insert-multi! db-spec :test_persons
+                      [{:full_name full-name
+                        :sex sex
+                        :birth_date (f/parse birth-date)
+                        :address address
+                        :insurance_policy_number insurance-policy-number}]))
+
 (defn setup-db []
+  ;; add time formating
   (extend-protocol jdbc/IResultSetReadColumn
     java.sql.Date
     (result-set-read-column [val _rsmeta _idx]
       (.toString (l/format-local-time val :year-month-day))))
-  (create-table)
-  (add-person default-person))
+  ;; create table
+  (jdbc/db-do-commands db-spec
+                       [test-persons-sql])
+  ;; add person
+  (add-test-person default-person))
 
 (defn fix-db [t]
   (setup-db)
@@ -47,6 +73,12 @@
 
 (deftest test-app-get-persons
   (let [request {:request-method :get :uri "/persons"}
+        response-body (:body (app request))]
+    (is (= (dissoc (first (decode "application/json" response-body)) :id)
+           default-person))))
+
+(deftest test-app-get-persons-by-search
+  (let [request {:request-method :get :uri "/persons/" :query-string "search=sok"}
         response-body (:body (app request))]
     (is (= (dissoc (first (decode "application/json" response-body)) :id)
            default-person))))

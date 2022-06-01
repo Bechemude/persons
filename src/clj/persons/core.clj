@@ -1,21 +1,23 @@
 (ns persons.core
   (:gen-class)
-  (:require [ring.adapter.jetty :refer [run-jetty]]
-            [ring.middleware.cors :refer [wrap-cors]]
-            [muuntaja.middleware :refer [wrap-format wrap-exception]]
-            [persons.middlewares :refer [wrap-exception-handling]]
-            [compojure.core :refer [DELETE POST PUT GET context defroutes]]
-            [compojure.coercions :refer [as-int]]
-            [compojure.route :as route]
-            [persons.crud :refer [get-persons
-                                  get-person-by-id
-                                  add-person
-                                  update-person
-                                  delete-person]]))
+  (:require
+   [compojure.coercions :refer [as-int]]
+   [compojure.core :refer [DELETE POST PUT GET context defroutes]]
+   [compojure.route :as route]
+   [muuntaja.middleware :refer [wrap-params wrap-format wrap-exception]]
+   [muuntaja.core :as m]
+   [persons.crud :refer [get-persons
+                         get-person-by-id
+                         add-person
+                         update-person
+                         delete-person]]
+   [persons.middlewares :refer [wrap-exception-handling]]
+   [ring.adapter.jetty :refer [run-jetty]]
+   [ring.middleware.cors :refer [wrap-cors]]))
 
 (defroutes app-routes
   (context "/persons" []
-    (GET "/" [] (get-persons))
+    (GET "/" [:as query] (get-persons (:query-string query)))
     (POST "/" [:as req] (add-person (:body-params req)))
     (context "/" []
       (GET "/:id{[0-9]+}" [id :<< as-int] (get-person-by-id id))
@@ -28,6 +30,7 @@
       wrap-exception-handling
       wrap-exception
       wrap-format
+      wrap-params
       (wrap-cors :access-control-allow-origin [#".*"]
                  :access-control-allow-methods [:get :put :post :delete])))
 
@@ -61,11 +64,19 @@
   (restart))
 
 (comment
-  (app {:request-method :get :uri "/persons/"})
+  (app {:request-method :get :uri "/persons"})
+  (app {:request-method :get :uri "/persons/" :query-string {:search "Kok"}})
+  (m/decode
+   "application/json"
+   (:body (app {:request-method :get :uri "/persons/" :query-string "search=sok"})))
+  (m/decode "application/json"
+            (:body (app {:request-method :get :uri "/persons/"})))
+  (:body (get-persons nil))
+  (get-persons  "Kok")
+  (get-persons  "Sok")
   (app {:request-method :get :uri "/persons/1"})
   (app {:request-method :post :uri "/persons"
         :body-params {:full-name "Koka"
                       :birth-date "1992-01-25"
                       :address "address"
-                      :insurance-policy-number "$$$$$$$$$"}})
-  )
+                      :insurance-policy-number "$$$$$$$$$"}}))

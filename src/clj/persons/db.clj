@@ -4,6 +4,11 @@
             [clj-time.local :as l]
             [clj-time.format :as f]))
 
+(extend-protocol jdbc/IResultSetReadColumn
+  java.sql.Date
+  (result-set-read-column [val _rsmeta _idx]
+    (.toString (l/format-local-time val :year-month-day))))
+
 (def db-spec {:dbtype "postgresql"
               :dbname "postgres"
               :user "postgres"
@@ -17,21 +22,25 @@
                             [:address "TEXT NOT NULL"]
                             [:insurance_policy_number "TEXT NOT NULL UNIQUE"]]))
 
-(extend-protocol jdbc/IResultSetReadColumn
-  java.sql.Date
-  (result-set-read-column [val _rsmeta _idx]
-    (.toString (l/format-local-time val :year-month-day))))
-
 (defn create-table []
   (jdbc/db-do-commands db-spec
-                       [persons-sql
-                        "CREATE INDEX name_ix ON persons ( id );"]))
+                       persons-sql))
+
+;; TODO: delete index dublicate
 
 (defn drop-table []
   (jdbc/execute! db-spec "DROP TABLE persons;"))
 
-(defn get-persons []
-  (jdbc/query db-spec ["SELECT * FROM persons"] {:identifiers #(.replace % \_ \-)}))
+(defn get-persons
+  []
+  (jdbc/query db-spec ["SELECT * FROM persons"]
+              {:identifiers #(.replace % \_ \-)}))
+
+(defn get-persons-by-search
+  [search]
+  (jdbc/query db-spec [(str
+                        "SELECT * FROM persons WHERE full_name ILIKE '%" search "%'")]
+              {:identifiers #(.replace % \_ \-)}))
 
 (defn add-person [{:keys
                    [full-name sex birth-date address insurance-policy-number]}]
