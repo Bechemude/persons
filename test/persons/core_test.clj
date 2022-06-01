@@ -87,6 +87,7 @@
   (jdbc/execute! db/db-spec "truncate persons cascade;"))
 
 ;; (decode "application/json"  (:body (app {:request-method :get :uri "/persons/"})))
+;; (empty? (decode "application/json"  (:body (app {:request-method :get :uri "/persons/" :query-string "search=kkkkkkk"}))))
 
 (defn fix-db [t]
   (setup-db)
@@ -139,12 +140,11 @@
 (deftest test-app-get-persons-by-fail-search
   (let [request {:request-method :get :uri "/persons/" :query-string "search=kkkkkkk"}
         response-status (:status (app request))]
-    (is (= 404 response-status))))
-
-(deftest test-app-create-person
-  (let [request {:request-method :post :uri "/persons" :body-params test-person}
-        status (:status (app request))]
-    (is (= 201 status))))
+    (is (= true
+           (->> (app request)
+                (:body)
+                (decode json-header)
+                (empty?))))))
 
 (deftest test-app-page-not-found
   (let [request {:request-method :get :uri "/not-found"}
