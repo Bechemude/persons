@@ -5,7 +5,6 @@
    [persons.events]
    [helix.core :refer [defnc $ <>]]
    [cljs.spec.alpha :as s]
-   [helix.hooks :as hooks]
    [reagent.core :as r]
    [helix.dom :as d]
    [form :as f]
@@ -73,69 +72,6 @@
                                 (rf/dispatch [:post-person person]))}
           "Save!"]]))}))
 
-;; (defnc edit-modal [{:keys [id]}]
-;;   (let [person @(rf/subscribe [:person])
-;;         is-loading? @(rf/subscribe [:is-loading?])]
-;;     (hooks/use-effect
-;;      "Get the user"
-;;      [id]
-;;      :once
-;;      (when id
-;;        (rf/dispatch [:get-person id])))
-;;     (<>
-;;      (d/h2 {:class "text-xl text-center"}
-;;            (if id
-;;              (str "Edit person " id)
-;;              "Create new person"))
-;;      (when id (when is-loading?
-;;                 (d/h2 {:class "text-xl pt-4 text-center"} "Loading...")))
-;; ;; ($ input {:label "ФИО"
-;; ;;                :type "text"
-;; ;;                :value (:full-name person)
-;; ;;                :handler (fn [e] (rf/dispatch [:handle-change :full-name (-> e .-target .-value)]))
-;; ;;                :is-valid? (s/valid? ::f/full-name (:full-name person))
-;; ;;                :error-msg (f/get-message (s/explain-data ::f/full-name (:full-name person)))})
-;;      (let [search @(rf/subscribe [:search-query])]
-;;        (r/as-element [:input {:label "ФИО"
-;;                               :type "text"
-;;                               :value search
-;;                               :on-change #(rf/dispatch [:handle-change (-> % .-target .-value)])
-;;                               :is-valid? (s/valid? ::f/full-name (:full-name person))
-;;                               :error-msg (f/get-message (s/explain-data ::f/full-name (:full-name person)))}]))
-;;      ($ select {:label "Пол"
-;;                 :type "select"
-;;                 :value (:sex person)
-;;                 :handler #(rf/dispatch [:handle-change :sex (-> % .-target .-value)])
-;;                 :is-valid? (s/valid? ::f/sex (:sex person))
-;;                 :error-msg (f/get-message (s/explain-data ::f/sex (:sex person)))
-;;                 :options #{"select a option" "male" "female" "other"}})
-;;      ($ input {:label "Дата рождения"
-;;                :type "date"
-;;                :value (:birth-date person)
-;;                :handler #(rf/dispatch [:handle-change :birth-date (-> % .-target .-value)])
-;;                :is-valid? (s/valid? ::f/birth-date (:birth-date person))
-;;                :error-msg (f/get-message (s/explain-data ::f/birth-date (:full person)))})
-;;      ($ input {:label "Адрес"
-;;                :type "text"
-;;                :value (:address person)
-;;                :handler #(rf/dispatch [:handle-change :address (-> % .-target .-value)])
-;;                :is-valid? (s/valid? ::f/address (:address person))
-;;                :error-msg (f/get-message (s/explain-data ::f/address (:address person)))})
-;;      ($ input {:label "Номер полиса ОМС"
-;;                :type "text"
-;;                :value (:insurance-policy-number person)
-;;                :handler #(rf/dispatch [:handle-change :insurance-policy-number (-> % .-target .-value)])
-;;                :is-valid? (s/valid? ::f/insurance-policy-number (:insurance-policy-number person))
-;;                :error-msg (f/get-message (s/explain-data ::f/insurance-policy-number (:insurance-policy-number person)))})
-;;      (d/button {:class "p-1 bg-gray-200 hover:bg-gray-300"
-;;                 :on-click #(prn person)}
-;;                "Pers!")
-;;      (d/button {:class "p-1 bg-gray-200 hover:bg-gray-300"
-;;                 :on-click #(if id
-;;                              (rf/dispatch [:put-person person id])
-;;                              (rf/dispatch [:post-person person]))}
-;;                "Save!"))))
-
 (defnc delete-modal [{:keys [id]}]
   (<>
    (d/h2 {:class "text-xl text-center"} "Are you sure?")
@@ -144,43 +80,29 @@
               :on-click #(rf/dispatch [:delete-person id])}
              "Delete")))
 
-;; (defnc modal [{:keys [person-id modal-type]}]
-;;   (let [modal-ref (hooks/use-ref nil)
-;;         error @(rf/subscribe [:error])]
-;;     (hooks/use-effect
-;;      :once
-;;      (.focus @modal-ref))
-;;     (d/div {:on-key-down (fn [e] (when (= (.-key e) "Escape") (handle-close)))
-;;             :tab-index 0
-;;             :ref modal-ref
-;;             :on-click handle-close
-;;             :class "fixed left-0 top-0 w-screen h-screen
-;;                     bg-gray-400 bg-opacity-50 overflow-auto"}
-;;            (d/div {:class "grid w-3/6 m-auto my-20 p-10 gap-10 bg-gray-100"
-;;                    :on-click (fn [e] (.stopPropagation e))}
-;;                   (d/button {:class "absolute justify-self-end text-3xl -m-5 transform rotate-45"
-;;                              :on-click handle-close} "+")
-;;                   (case modal-type
-;;                     "delete" ($ delete-modal {:id person-id
-;;                                               :handle-close handle-close})
-;;                     "edit" ($ edit-modal {:id person-id
-;;                                           :handle-close handle-close}))
-;;                   (when error
-;;                     (d/h2 {:class "text-xl pt-4 text-center"} "Error: " (:status-text error)))))))
-
 (defn modal
   []
-  (let [modal @(rf/subscribe [:modal])]
-    [:div {:on-key-down (fn [e] (when (= (.-key e) "Escape") (handle-close)))
-           :tab-index 0
-            ;; :ref modal-ref
-           :on-click handle-close
-           :class "fixed left-0 top-0 w-screen h-screen
+  (let [modal @(rf/subscribe [:modal])
+        error @(rf/subscribe [:error])
+        ref (r/atom nil)]
+    (r/create-class
+     {:component-did-mount
+      (fn [_]
+        (.focus @ref))
+      :reagent-render
+      (fn []
+        [:div {:on-key-down (fn [e] (when (= (.-key e) "Escape") (handle-close)))
+               :tab-index 0
+               :ref #(reset! ref %)
+               :on-click handle-close
+               :class "fixed left-0 top-0 w-screen h-screen
                     bg-gray-400 bg-opacity-50 overflow-auto"}
-     [:div {:class "grid w-3/6 m-auto my-20 p-10 gap-10 bg-gray-100"
-            :on-click (fn [e] (.stopPropagation e))}
-      [:button {:class "absolute justify-self-end text-3xl -m-5 transform rotate-45"
-                :on-click handle-close} +]
-      (case (:type modal)
-        "delete" ($ delete-modal {:id (:person-id modal)})
-        "edit" [edit-modal (:person-id modal)])]]))
+         [:div {:class "grid w-3/6 m-auto my-20 p-10 gap-10 bg-gray-100"
+                :on-click (fn [e] (.stopPropagation e))}
+          [:button {:class "absolute justify-self-end text-3xl -m-5 transform rotate-45"
+                    :on-click handle-close} "+"]
+          (case (:type modal)
+            "delete" ($ delete-modal {:id (:person-id modal)})
+            "edit" [edit-modal (:person-id modal)])
+          (when error
+            [:h2 {:class "text-xl pt-4 text-center"} "Error: " (:status-text error)])]])})))
